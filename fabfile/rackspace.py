@@ -134,6 +134,7 @@ def bootstrap():
 
 @task
 def configuration_package():
+    print(magenta('Packaging Configuration...'))
     path = env.real_fabfile
      
     with lcd(path):
@@ -143,13 +144,13 @@ def configuration_package():
 
 @task
 def configuration_deliver():
-    with(settings(host_string='108-166-65-222.static.cloud-ips.com', user='root')):
-        path = env.real_fabfile
-        put('{0}/configuration/configuration.tgz'.format(path), 'configuration.tgz')
-        run('rm -rf ./configuration')
-        run('tar -xzf ./configuration.tgz')
+    print(magenta('Delivering Configuration...'))
+    path = env.real_fabfile
+    put('{0}/configuration/configuration.tgz'.format(path), 'configuration.tgz')
+    run('rm -rf ./configuration')
+    run('tar -xzf ./configuration.tgz')
 
 @task
 def provision():
-    with(settings(host_string='108-166-65-222.static.cloud-ips.com', user='root')):
-        run("puppet apply --modulepath '/root/configuration/modules' /root/configuration/site.pp")
+    print(magenta('Starting Provisioning...'))
+    run("puppet apply --modulepath '/root/configuration/modules' /root/configuration/site.pp")
