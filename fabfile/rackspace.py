@@ -138,7 +138,7 @@ def configuration_package():
      
     with lcd(path):
         local('rm -rf configuration.tgz'.format(path))
-        local('tar -cvzf configuration.tgz ./configuration'.format(path))
+        local('tar -czf configuration.tgz ./configuration'.format(path))
         local('mv configuration.tgz ./configuration/'.format(path))
 
 @task
