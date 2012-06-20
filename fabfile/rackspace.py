@@ -8,6 +8,7 @@ from fabric.api import settings
 from fabric.api import run
 from fabric.api import put
 from fabric.api import local
+from fabric.api import lcd
 from fabric.colors import green
 from fabric.colors import red
 from fabric.colors import magenta
@@ -117,6 +118,8 @@ def create_server():
     with(settings(host_string=dns_name, user='root')):
         # This is the fabric task for bootstrapping a running instance
         bootstrap()
+        configuration_package()
+        configuration_deliver()
         provision()
 
 @task
@@ -130,10 +133,23 @@ def bootstrap():
     run('./bootstrap.sh')
 
 @task
-def provision():
+def configuration_package():
     path = env.real_fabfile
-    local('rm -rf {}/configuration.tgz'.format(path))
-    local('tar -cvzf {}/configuration.tgz {}/configuration')
-    local('mv {}/configuration.tgz {}/configuration/')
-    #put('{}/configuration/configuration.tgz'.format(env.real_fabfile), 'configuration.tgz')
-    #run('tar -xvzf configuration.tgz')
+     
+    with lcd(path):
+        local('rm -rf configuration.tgz'.format(path))
+        local('tar -cvzf configuration.tgz ./configuration'.format(path))
+        local('mv configuration.tgz ./configuration/'.format(path))
+
+@task
+def configuration_deliver():
+    with(settings(host_string='108-166-65-222.static.cloud-ips.com', user='root')):
+        path = env.real_fabfile
+        put('{0}/configuration/configuration.tgz'.format(path), 'configuration.tgz')
+        run('rm -rf ./configuration')
+        run('tar -xzf ./configuration.tgz')
+
+@task
+def provision():
+    with(settings(host_string='108-166-65-222.static.cloud-ips.com', user='root')):
+        run("puppet apply --modulepath '/root/configuration/modules' /root/configuration/site.pp")

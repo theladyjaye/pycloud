@@ -1,9 +1,11 @@
-
+include aventurella-ruby
 include aventurella-github
 include aventurella-git
 include aventurella-apache2
 include aventurella-ntp
 include aventurella-vim
+
+aventurella-ruby::gem {'sass':}
 
 aventurella-apache2::module {'enable_apache_modules':
     modules => ['rewrite'],
@@ -23,3 +25,9 @@ aventurella-apache2::vhost {'ctflorals':
     allow_override => true,
 }
 
+#exec { 'compile-css:
+#        command => "sass ",
+#        require => [ Aventurella-Ruby::gem['sass'] ],
+#        creates => "${path}/.git",
+#        path => ["/usr/bin", '/usr/local/bin'],
+#    }
