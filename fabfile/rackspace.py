@@ -3,6 +3,12 @@ import time
 import sys
 from fabric.api import task
 from fabric.api import run
+from fabric.api import env
+from fabric.api import settings
+from fabric.api import run
+from fabric.colors import green
+from fabric.colors import red
+from fabric.colors import magenta
 from cloudservers import CloudServers
 
 """
@@ -56,24 +62,25 @@ def create_server():
     key = os.getenv('CLOUD_SERVERS_API_KEY')
     cs = CloudServers(username, key)
     suffix = os.urandom(8).encode('hex')
+    dns_name = None
+    spinner = ['|', '/', '-']
+    spinner_index = 0
+    sleep_index = 0
 
-    files = {'/root/.ssh/authorized_keys': open(os.getenv('HOME')+"/.ssh/id_rsa.pub")}
+    files = {'/root/.ssh/authorized_keys': open(os.getenv('HOME')+"/.ssh/id_rsa.pub"),
+             '/root/bootstrap.sh'        : open('{}/bootstrap/ubuntu.sh'.format(env.real_fabfile))}
 
-    print('Creating instance Ubuntu 12.04 LTS')
-
+    print(green("\nCreating instance Ubuntu 12.04 LTS\n", bold=True))
     instance = cs.servers.create(image=125,
                                  flavor=1,
                                  files=files,
                                  name='webserver-{}'.format(suffix))
 
     instance_id = instance.id
-    print('Waiting for instance to start...')
+
+    print(magenta('Waiting for instance to start...'))
 
     status = instance.status
-
-    spinner = ['|', '/', '-']
-    spinner_index = 0
-    sleep_index = 0
 
     while status != 'ACTIVE':
         time.sleep(.125)
@@ -92,7 +99,7 @@ def create_server():
             else:
                 message = "Building {} ".format(spinner_str)
 
-        sys.stdout.write("\r" + message)
+        sys.stdout.write("\r" + magenta(message))
         sys.stdout.flush()
 
     if status == 'ACTIVE':
@@ -100,7 +107,26 @@ def create_server():
         sys.stdout.flush()
         public_ip = instance.addresses['public'][0]
         dns_name = "{}.static.cloud-ips.com".format(public_ip.replace('.', '-'))
-        print('New instance {} ({}) accessible at {}'.format(instance.id, instance.name, dns_name))
+        print(green('New instance {} ({}) created!\nAccessible at {}'.format(instance.id, instance.name, dns_name), bold=True))
     else:
-        print('Instance status: ' + status)
+        print(red('Instance status: ' + status))
         return
+
+    with(settings(host_string=dns_name, user='root')):
+        # This is the fabric task for bootstrapping a running instance
+        bootstrap()
+        configure()
+
+@task
+def bootstrap():
+    print(green('Bootstraping instance', bold=True))
+    # We could just run run the commands here instead of
+    # executing the bootstrap script but I like having the 
+    # bootstrap script abstracted away for use with other
+    # services.
+    run('chmod u+x ./bootstrap.sh')
+    run('./bootstrap.sh')
+
+@task
+def configure():
+    pass
