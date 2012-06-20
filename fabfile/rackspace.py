@@ -6,6 +6,8 @@ from fabric.api import run
 from fabric.api import env
 from fabric.api import settings
 from fabric.api import run
+from fabric.api import put
+from fabric.api import local
 from fabric.colors import green
 from fabric.colors import red
 from fabric.colors import magenta
@@ -115,7 +117,7 @@ def create_server():
     with(settings(host_string=dns_name, user='root')):
         # This is the fabric task for bootstrapping a running instance
         bootstrap()
-        configure()
+        provision()
 
 @task
 def bootstrap():
@@ -128,5 +130,10 @@ def bootstrap():
     run('./bootstrap.sh')
 
 @task
-def configure():
-    pass
+def provision():
+    path = env.real_fabfile
+    local('rm -rf {}/configuration.tgz'.format(path))
+    local('tar -cvzf {}/configuration.tgz {}/configuration')
+    local('mv {}/configuration.tgz {}/configuration/')
+    #put('{}/configuration/configuration.tgz'.format(env.real_fabfile), 'configuration.tgz')
+    #run('tar -xvzf configuration.tgz')
