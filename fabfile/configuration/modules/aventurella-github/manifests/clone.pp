@@ -6,6 +6,7 @@ define aventurella-github::clone(
 
     file{$path:
         ensure => directory,
+        recurse => true,
         owner => $owner,
         group => $group
     }
@@ -16,6 +17,4 @@ define aventurella-github::clone(
         creates => "${path}/.git",
         path => ["/usr/bin"],
     }
-
-
 }

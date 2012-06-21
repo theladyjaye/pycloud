@@ -73,7 +73,7 @@ def create_server():
     files = {'/root/.ssh/authorized_keys': open(os.getenv('HOME')+"/.ssh/id_rsa.pub"),
              '/root/bootstrap.sh'        : open('{}/bootstrap/ubuntu.sh'.format(env.real_fabfile))}
 
-    print(green("\nCreating instance Ubuntu 12.04 LTS\n", bold=True))
+    print(green("\nCreating instance Ubuntu 12.04 LTS (256 RAM)\n", bold=True))
     instance = cs.servers.create(image=125,
                                  flavor=1,
                                  files=files,
@@ -81,26 +81,27 @@ def create_server():
 
     instance_id = instance.id
 
-    print(magenta('Waiting for instance to start...'))
+    print(magenta('Waiting for instance {}-{} to start...'.format('webserver', suffix)))
 
     status = instance.status
 
     while status != 'ACTIVE':
-        time.sleep(.125)
+        #time.sleep(.125)
+        time.sleep(10)
         sleep_index = sleep_index + .125
 
-        if sleep_index % 10.0:
-            instance = cs.servers.get(instance_id)
-            status = instance.status
+        #if sleep_index % 10.0:
+        instance = cs.servers.get(instance_id)
+        status = instance.status
 
         spinner_index = 0 if spinner_index == len(spinner) - 1 else spinner_index + 1
         spinner_str = spinner[spinner_index]
 
         if status == 'BUILD':
             if instance.progress == 100:
-                message = "Running Post-Build Configurations {} ".format(spinner_str)
+                message = "Running Post-Build Configurations ".format(spinner_str)
             else:
-                message = "Building {} ".format(spinner_str)
+                message = "Building ".format(spinner_str)
 
         sys.stdout.write("\r" + magenta(message))
         sys.stdout.flush()
