@@ -1,14 +1,19 @@
 define aventurella-github::clone(
     $path,
     $owner = $id,
-    $group = $id
+    $group = $id,
+    $require = false
 ){
 
     file{$path:
-        ensure => directory,
+        ensure => "directory",
         recurse => true,
         owner => $owner,
         group => $group
+    }
+
+    if $require{
+        File[$path] { require +> $require }
     }
 
     exec { $title:
