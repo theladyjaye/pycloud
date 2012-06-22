@@ -49,8 +49,8 @@ Image IDs
 
 Flavor IDs
 --------------
-1 : 256 server
-2 : 512 server
+1 : 256 server // micro
+2 : 512 server // tiny
 3 : 1GB server
 4 : 2GB server
 5 : 4GB server
@@ -127,7 +127,7 @@ def create_server():
 def bootstrap():
     print(green('Bootstraping instance', bold=True))
     # We could just run run the commands here instead of
-    # executing the bootstrap script but I like having the 
+    # executing the bootstrap script but I like having the
     # bootstrap script abstracted away for use with other
     # services.
     run('chmod u+x ./bootstrap.sh')
@@ -137,7 +137,7 @@ def bootstrap():
 def configuration_package():
     print(magenta('Packaging Configuration...'))
     path = env.real_fabfile
-     
+
     with lcd(path):
         local('rm -rf configuration.tgz'.format(path))
         local('tar -czf configuration.tgz ./configuration'.format(path))
