@@ -8,7 +8,10 @@ from fabric.api import lcd
 from fabric.api import env
 from fabric.api import run
 from fabric.api import put
+from fabric.api import sudo
+from fabric.api import hide
 from fabric.colors import magenta
+from fabric.colors import white
 from pycloud.services.cloudservers import CloudServerService
 from pycloud.providers.amazon import EC2
 
@@ -24,7 +27,7 @@ def create():
                             type_id='t1.micro',
                             key_name='id_rsa.pub',
                             placement='us-east-1a',
-                            security_groups=['default', 'webservers', 'ping'],
+                            security_groups=['default', 'webservers'],
                             user_data=user_data,
                             instance_initiated_shutdown_behavior='terminate',
                             tags={'project':'test'})
@@ -42,11 +45,13 @@ def create():
                 sys.stdout.flush()
                 break
             except IOError:
-                message = message + '.'
+                message = message + white('.')
                 time.sleep(.750)
 
+        # not using a puppet master
         configuration_package()
         configuration_deliver()
+        provision()
 
 @task
 def active():
@@ -78,3 +83,30 @@ def configuration_deliver():
     put('{0}/configuration/configuration.tgz'.format(path), 'configuration.tgz')
     run('rm -rf ./configuration')
     run('tar -xzf ./configuration.tgz')
+
+def provision():
+    print(magenta('Starting Provisioning'))
+    message = 'Waiting for puppet to become available'
+
+    with hide('everything'):
+        with settings(warn_only=True):
+            while 1:
+                sys.stdout.write("\r" + magenta(message) + " ")
+                sys.stdout.flush()
+                # we don't have a puppet master here
+                # so we need to poll
+                if run("which puppet").succeeded:
+                    sys.stdout.write("\n")
+                    sys.stdout.flush()
+                    break
+                message = message + white('.')
+                time.sleep(2)
+
+    # this AMI does not let you log in as root.
+    # we need to be sure the agent-forwarding is active
+    # when we provision, so we pass -E on top of the default
+    # fabric sudo prefix. The default rackspace images
+    # allow you to ssh as root
+    sudo_prefix = "sudo -S -E -p '%(sudo_prompt)s' " % env
+    with settings(sudo_prefix=sudo_prefix):
+        sudo("puppet apply --modulepath '/home/ubuntu/configuration/modules' /home/ubuntu/configuration/site.pp")

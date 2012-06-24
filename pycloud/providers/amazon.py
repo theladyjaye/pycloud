@@ -63,6 +63,7 @@ class EC2(object):
         console.write_ln("")
 
         if tags:
+            time.sleep(1)
             conn.create_tags([instance.id], tags)
 
         status = instance.update()
