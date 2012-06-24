@@ -22,7 +22,7 @@ class EC2(object):
             tags = kwargs['tags']
             del kwargs['tags']
 
-        console.write_ln(white("Validating image id {}".format(image_id), bold=True))
+        console.write_ln(white("Validating {}".format(image_id), bold=True))
 
         image = None
         conn = EC2Connection()

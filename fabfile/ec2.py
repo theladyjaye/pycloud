@@ -9,8 +9,6 @@ from fabric.api import env
 from fabric.api import run
 from fabric.api import put
 from fabric.colors import magenta
-from fabric.colors import red
-from fabric.colors import white
 from pycloud.services.cloudservers import CloudServerService
 from pycloud.providers.amazon import EC2
 
@@ -32,7 +30,8 @@ def create():
                             tags={'project':'test'})
 
     with(settings(host_string=server.dns_name, user='ubuntu')):
-        message = 'Waiting for host to become available.'
+        message = 'Waiting for host to become available'
+
         while 1:
             try:
                 sys.stdout.write("\r" + magenta(message) + " ")
@@ -44,7 +43,7 @@ def create():
                 break
             except IOError:
                 message = message + '.'
-                time.sleep(.500)
+                time.sleep(.750)
 
         configuration_package()
         configuration_deliver()
