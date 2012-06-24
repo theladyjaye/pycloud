@@ -30,7 +30,7 @@ def create():
                             security_groups=['default', 'webservers'],
                             user_data=user_data,
                             instance_initiated_shutdown_behavior='terminate',
-                            tags={'project':'test'})
+                            tags={'project':'ctflorals'})
 
     with(settings(host_string=server.dns_name, user='ubuntu')):
         message = 'Waiting for host to become available'
@@ -56,7 +56,7 @@ def create():
 @task
 def active():
     service = CloudServerService(provider=EC2())
-    servers = service.get_servers(filters={'instance-state-name':'running', 'tag:project':'test'})
+    servers = service.get_servers(filters={'instance-state-name':'running', 'tag:project':'ctflorals'})
 
     for server in servers:
         print(server)
