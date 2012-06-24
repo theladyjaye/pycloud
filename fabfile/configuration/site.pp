@@ -13,14 +13,14 @@ aventurella-apache2::module {'enable_apache_modules':
 }
 
 aventurella-apache2::vhost {'ctflorals':
-    docroot        => '/var/www/ctflorals/www',
+    docroot        => '/var/www/www',
     server_name    => 'ctflorals.com',
     server_aliases => ['www.ctflorals.com'],
     allow_override => true,
 }
 
 aventurella-github::clone{'aventurella/ctflorals.git':
-    path  => '/var/www/ctflorals',
+    path  => '/var/www',
     owner => 'www-data',
     group => 'www-data',
     require => Package[apache2]

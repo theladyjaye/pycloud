@@ -1,66 +1,29 @@
-import os
-import time
-import sys
-import boto
-from boto.ec2.connection import EC2Connection
 from fabric.api import task
-from fabric.api import run
-from fabric.api import env
-from fabric.api import settings
-from fabric.api import run
-from fabric.api import put
-from fabric.api import local
-from fabric.api import lcd
-from fabric.colors import green
-from fabric.colors import red
-from fabric.colors import magenta
-
-from .utils.spinner import Spinner
-from .utils.console import Console
-
+from pycloud.services.cloudservers import CloudServerService
+from pycloud.providers.amazon import EC2
 
 @task
-def create_server():
-    key_pair_name = 'ec2-blitz'
-    placement = 'us-east-1a'
-    instance_type = 't1.micro'
-    ami = 'ami-a29943cb' # ubuntu 12.04
-    
-    spinner = Spinner()
-    console = Console()
+def create():
+    service = CloudServerService(provider=EC2())
+    service.create(image_id='ami-a29943cb',
+                  type_id='t1.micro',
+                  key_name='id_rsa.pub',
+                  placement='us-east-1a',
+                  security_groups=['default', 'webservers'],
+                  user_data='',
+                  instance_initiated_shutdown_behavior='terminate',
+                  tags={'project':'test'})
 
-    sleep_time = 0.200
-    sleep_index = 0;
-    
+@task
+def active():
+    service = CloudServerService(provider=EC2())
+    servers = service.get_servers(filters={'instance-state-name':'running', 'tag:project':'test'})
 
-    console.write_ln(green("\nCreating instance Ubuntu 12.04 LTS (t1.micro)\n", bold=True))
+    for server in servers:
+        print(server)
 
-    conn = EC2Connection()
-    reservation = conn.run_instances(ami,\
-                                     instance_type=instance_type, \
-                                     key_name=key_pair_name, \
-                                     placement=placement)
-
-    instance = reservation.instances[0]
-
-    console.write_ln('Waiting for instance to start...')
-    # Check up on its status every so often
-    
-    status = instance.update()
-    
-    while status == 'pending':
-        time.sleep(sleep_time)
-        sleep_index += sleep_time
-        
-        if int(sleep_index) == 10:
-            sleep_index = 0
-            status = instance.update()
-        
-        console.write("Building ({}) {} ".format(status, spinner.next()))
-
-    if status == 'running':
-        console.write('New instance "' + instance.id + '" accessible at ' + instance.public_dns_name)
-    else:
-        console.write('Instance status: ' + status)
-        return
+@task
+def terminate(ids):
+    service = CloudServerService(provider=EC2())
+    service.terminate_servers(ids)
 
