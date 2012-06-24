@@ -1,20 +1,12 @@
-import os
 import time
-import sys
 from boto.ec2.connection import EC2Connection
 from boto.exception import EC2ResponseError
 from pycloud.utils.spinner import Spinner
 from pycloud.utils.console import Console
-from pycloud.utils.colors import green
 from pycloud.utils.colors import magenta
 from pycloud.utils.colors import red
 from pycloud.utils.colors import white
 from pycloud.models.cloudservers import CloudServer
-
-# key_pair_name = 'id_rsa.pub'
-# placement = 'us-east-1a'
-# instance_type = 't1.micro'
-# ami = 'ami-a29943cb' # ubuntu 12.04
 
 class EC2(object):
 
@@ -45,13 +37,9 @@ class EC2(object):
 
         reservation = image.run(instance_type=type_id, **kwargs)
 
-        # reservation = conn.run_instances(image_id,
-        #                                  instance_type=type_id,
-        #                                  **kwargs)
-
         instance = reservation.instances[0]
 
-        console.write_ln(magenta('Waiting for instance to start...'))
+        console.write_ln(magenta('Waiting for instance to start'))
         # Check up on its status every so often
 
         status = instance.update()
@@ -64,33 +52,38 @@ class EC2(object):
                 sleep_index = 0
                 status = instance.update()
 
-            console.write(magenta("Building ({}) {} ".format(status, white(spinner.next()))))
+            console.write(magenta("Building {} ".format(white(spinner.next()))))
 
         if status == 'running':
-            console.write(magenta('New instance "' + instance.id + '" accessible at ' + instance.public_dns_name))
+            console.write(magenta('New instance "' + instance.id + '" accessible @ ' + instance.public_dns_name))
         else:
             console.write(red('Instance status: ' + status))
             return
 
         console.write_ln("")
 
+        if tags:
+            conn.create_tags([instance.id], tags)
+
+        status = instance.update()
+
         server = CloudServer()
         server.dns_name   = instance.public_dns_name
         server.id         = instance.id
         server.ip_address = instance.ip_address
 
-        if tags:
-            conn.create_tags([instance.id], tags)
+        return server
 
     def get_servers(self, filters=None):
         console = Console()
-        console.write_ln(white("Retrieving servers...", bold=True))
+        console.write_ln(white("Retrieving servers", bold=True))
 
         conn = EC2Connection()
         results = []
         try:
             reservations = conn.get_all_instances(filters=filters)
         except EC2ResponseError:
+            console.write_ln(red('Unable to retrieve servers '))
             return results
 
         for reservation in reservations:
@@ -99,6 +92,8 @@ class EC2(object):
             server.dns_name   = instance.public_dns_name
             server.id         = instance.id
             server.ip_address = instance.ip_address
+            server.image_id   = instance.image_id
+            server.type_id    = instance.instance_type
             results.append(server)
 
         return results
@@ -108,9 +103,10 @@ class EC2(object):
         console.write_ln(white("Terminating servers ({})".format(ids), bold=True))
 
         conn = EC2Connection()
+
         try:
             conn.terminate_instances(ids)
         except EC2ResponseError:
-            pass
+            console.write_ln(red('Unable to terminate servers {}'.format(ids)))
 
 

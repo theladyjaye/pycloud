@@ -3,7 +3,7 @@ class CloudServerService(object):
         self.provider = provider
 
     def create(self, image_id, type_id, **kwargs):
-        self.provider.create(image_id, type_id, **kwargs)
+        return self.provider.create(image_id, type_id, **kwargs)
 
     def get_servers(self, filters=None):
         return self.provider.get_servers(filters)
